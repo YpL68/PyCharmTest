@@ -14,3 +14,4 @@ def minus(a1, b1):
 
 
 print(minus(5, 6))
+print(minus(5, 7))
