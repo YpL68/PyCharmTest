@@ -1,17 +1,15 @@
-# a = None
-# b = None
-# print(id(a))
-# print(id(b))
-#
-# a = abs(-10)
-# b = abs(-10)
-# print(id(a))
-# print(id(b))
-
+import importlib.util
+import sys
+# import module1
+# import module2
+from First.module1 import plus
+from Two.module2 import plus2
 
 def minus(a1, b1):
     return a1 - b1
 
 
-print(minus(5, 6))
-print(minus(5, 7))
+if __name__ == '__main__':
+    print(minus(1,2))
+    print(plus(7,9))
+    print(plus2(7,9))
