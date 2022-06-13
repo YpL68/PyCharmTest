@@ -20,8 +20,6 @@ if __name__ == '__main__':
         else:
             print("------")
 
-
-
     # iCounter = 0
     # while iCounter < 10:
     #     print(f"Iteration {iCounter + 1}")
@@ -29,3 +27,10 @@ if __name__ == '__main__':
 
     # i = int("asd")
     # print(i)
+
+    try:
+        a = float("121,0")
+    except:
+        print("end1")
+    # print(a)
+    print("end")
