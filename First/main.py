@@ -1,36 +1,26 @@
 # import importlib.util
 # import sys
 import First.module1 as m1
-import Two.module2 as m2
+import Two.module_func as m3
 
 
 # from First.module1 import plus
 # from Two.module2 import plus2
 
-
-def minus(a1, b1):
-    return a1 - b1
-
-
 if __name__ == '__main__':
-    TestStr = "Вася Пупкин"
-    for i in range(20):
-        if not i % 2:
-            print(f"Iteration {i}")
-        else:
-            print("------")
 
-    # iCounter = 0
-    # while iCounter < 10:
-    #     print(f"Iteration {iCounter + 1}")
-    #     iCounter += 1
+    # print(m3.fibonacci(int(input(">> "))))
+    #
+    # print(m3.fibonacci.__doc__)
 
-    # i = int("asd")
-    # print(i)
+    a = True
 
-    try:
-        a = float("121,0")
-    except:
-        print("end1")
-    # print(a)
-    print("end")
+    if not a: i = 10
+    else: i = 20
+
+    if a: i += 10
+
+    print(i)
+
+
+
