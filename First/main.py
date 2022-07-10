@@ -16,7 +16,7 @@ TRANSLATION = ("a", "b", "v", "g", "d", "e", "e", "j", "z", "i", "j", "k", "l", 
 TRANS = {}
 
 
-def is_folder_name_wrong(folder_name: str) -> bool:
+def is_wrong_folder_name(folder_name: str) -> bool:
     return bool(re.search(r"[^0-9a-zA-Z_]", folder_name))
 
 
@@ -61,7 +61,7 @@ def parsing_folder(path_dir: Path):
     if is_folder_empty(path_dir):
         path_dir.rmdir()
     else:
-        if is_folder_name_wrong(path_dir.name):
+        if is_wrong_folder_name(path_dir.name):
             path_dir.rename(Path(path_dir.parent, normalize(path_dir.name)))
 
 
@@ -84,7 +84,7 @@ if __name__ == '__main__':
         Path(dir_path, folder).mkdir(exist_ok=True)
 
     try:
-        print("Start sorting and grouping files in a folder...")
+        print("\nStart sorting and grouping files in a folder...\n")
         parsing_folder(dir_path)
         print("The file sorting and grouping was successful.")
     except: #I know it's not recommended
