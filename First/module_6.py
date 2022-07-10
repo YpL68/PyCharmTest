@@ -31,6 +31,7 @@ def is_dir_empty(path_dir: Path) -> bool:
 def parsing_folder(path_dir: Path):
     for item in path_dir.iterdir():
         if item.is_dir():
+            if item.name == "Test": raise Exception("Dfcz")
             if item.name not in EXCLUDE_FOLDERS:
                 parsing_folder(item)
         else:
