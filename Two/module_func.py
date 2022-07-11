@@ -1,3 +1,4 @@
+import re
 def fibonacci(n):
     """Вычисление элемента ряда Фибоначчи методом рекурсии"""
 
@@ -40,13 +41,14 @@ def fibonacci_alt(n):
 
     return result
 
-if __name__ == '__main__':
 
-    num = int(input("Input number: "))
-    print("alt")
-    print(fibonacci_alt(num))
-    print("recurs")
-    print(fibonacci(num))
+def is_wrong_folder_name(folder_name: str) -> bool:
+    return bool(re.search(r"[^0-9a-zA-Z_]", folder_name))
+
+if __name__ == '__main__':
+    print(is_wrong_folder_name("Wa.si_123"))
+
+
 
 
 
