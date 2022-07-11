@@ -18,16 +18,25 @@ for c, l in zip(CYRILLIC_SYMBOLS, TRANSLATION):
     TRANS[ord(c)] = l
     TRANS[ord(c.upper())] = l.upper()
 
-# folder - file types
-FILE_TYPES = {"images":     (".JPEG", ".PNG", ".JPG", ".SVG"),
-              "video":      (".AVI", ".MP4", ".MOV", ".MKV"),
-              "documents":  (".DOC", ".DOCX", ".TXT", ".PDF", ".XLSX", ".PPTX"),
-              "audio":      (".MP3", ".OGG", ".WAV", ".AMR"),
-              "archives":   (".ZIP", ".GZ", ".TAR")}
 
-# An alternative for: for key, value in FILE_TYPES.items(): if file_ext in value...
-FILE_FOLDER_LINKS = \
-    {file_ext: folder for folder, file_types in FILE_TYPES.items() for file_ext in file_types}
+def file_action(file: Path):
+    folder_name = FILE_EXT_LINKS.get(file.suffix.upper())
+    if folder_name:
+        FILE_TYPES[folder_name]["action"](file, folder_name)  # processing function call
+    else:  # unknown extension
+        file.replace(Path(file.parent, normalize(file.stem) + file.suffix))
+
+
+def file_move(file: Path, destination_folder: str):
+    # with overwriting a file
+    file.replace(Path(base_path_dir, destination_folder, normalize(file.stem) + file.suffix))
+
+
+def archive_unpack(archive_name: Path, destination_folder: str):
+    # with deleting a archive file
+    shutil.unpack_archive(str(archive_name),
+                          str(Path(base_path_dir, destination_folder, normalize(archive_name.stem))))
+    archive_name.unlink()
 
 
 def is_wrong_folder_name(folder_name: str) -> bool:
@@ -42,8 +51,15 @@ def normalize(file_name: str) -> str:
     return "_".join(re.findall(r"\w+", file_name.translate(TRANS)))
 
 
-def archive_unpack(archive_name: Path):
-    shutil.unpack_archive(str(archive_name), str(Path(archive_name.parent, archive_name.stem)))
+FILE_TYPES = {"images": {"file_ext": (".JPEG", ".PNG", ".JPG", ".SVG"), "action": file_move},
+              "video": {"file_ext": (".AVI", ".MP4", ".MOV", ".MKV"), "action": file_move},
+              "documents": {"file_ext": (".DOC", ".DOCX", ".TXT", ".PDF", ".XLSX", ".PPTX"), "action": file_move},
+              "audio": {"file_ext": (".MP3", ".OGG", ".WAV", ".AMR"), "action": file_move},
+              "archives": {"file_ext": (".ZIP", ".GZ", ".TAR"), "action": archive_unpack}}
+
+# An alternative for: for key, value in FILE_TYPES.items(): if file_ext in...
+FILE_EXT_LINKS = \
+    {file_ext: folder for folder, params in FILE_TYPES.items() for file_ext in params["file_ext"]}
 
 
 def parsing_folder(path_dir: Path):
@@ -52,14 +68,7 @@ def parsing_folder(path_dir: Path):
             if item.name not in FILE_TYPES.keys():
                 parsing_folder(item)
         else:
-            folder_name = FILE_FOLDER_LINKS.get(item.suffix.upper())
-            if folder_name:
-                new_item = Path(base_path_dir, folder_name, normalize(item.stem) + item.suffix)
-                item.replace(new_item) # with overwriting a file
-
-                if folder_name == "archives": archive_unpack(new_item)
-            else:
-                item.replace(Path(item.parent, normalize(item.stem) + item.suffix))
+            file_action(item)
 
     if is_folder_empty(path_dir):
         path_dir.rmdir()
@@ -78,13 +87,14 @@ if __name__ == '__main__':
             sys.exit("Folder not found.")
 
     try:
-        print("\nStart sorting and grouping files in a folder...\n")
+        print("\nStarting to group files in a folder...\n")
 
+        # Creating folders to store sorted files
         for folder in FILE_TYPES.keys():
             Path(base_path_dir, folder).mkdir(exist_ok=True)
 
         parsing_folder(base_path_dir)
 
-        print("The file sorting and grouping was successful.")
-    except: #I know it's not recommended
-        sys.exit("An error occurred while sorting and grouping files ((")
+        print("The file grouping was successful.")
+    except:  # I know it's not recommended
+        sys.exit("An error occurred when grouping files ((")
