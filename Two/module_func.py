@@ -47,25 +47,15 @@ def fibonacci_alt(n):
 def is_wrong_folder_name(folder_name: str) -> bool:
     return bool(re.search(r"[^0-9a-zA-Z_]", folder_name))
 
+MAX_PRINT_STR_LEN = 6
+out_str = "11,22,33,44,55,66,77,88,99"
+while len(out_str) > MAX_PRINT_STR_LEN:
+    pos = out_str[:MAX_PRINT_STR_LEN].rfind(",")
+    if pos == -1:
+        break
+    else:
+        print(out_str[:pos+1].lstrip())
+        out_str = out_str[pos+1:].lstrip()
+print(out_str)
 
-FILE_TYPES = {"images": {"file_extensions": (".JPEG", ".PNG", ".JPG", ".SVG"),
-                         "action": "file_move"},
-              "video": {"file_extensions": (".AVI", ".MP4", ".MOV", ".MKV"),
-                        "action": "file_move"},
-              "documents": {"file_extensions": (".DOC", ".DOCX", ".TXT", ".PDF", ".XLSX", ".PPTX"),
-                            "action": "file_move"},
-              "audio": {"file_extensions": (".MP3", ".OGG", ".WAV", ".AMR"),
-                        "action": "file_move"},
-              "archives": {"file_extensions": (".ZIP", ".GZ", ".TAR"),
-                           "action": "file_move"}}
 
-# An alternative for: for key, value in FILE_TYPES.items(): if file_ext in value[0]...
-FILE_FOLDER_LINKS = \
-    {file_ext: folder for folder, params in FILE_TYPES.items() for file_ext in params.get("file_extensions")}
-
-dict1 =  {"file_extensions": (".JPEG", ".PNG", ".JPG", ".SVG"), "action": "file_move"}
-
-dict2 = [i for i in dict1]
-
-print(FILE_FOLDER_LINKS)
-print(dict2)
