@@ -3,10 +3,6 @@ import sys
 import shutil
 from pathlib import Path
 
-""" 
-    Альтернатива со списками
-"""
-
 CYRILLIC_SYMBOLS = "абвгдеёжзийклмнопрстуфхцчшщъыьэюяєіїґ"
 TRANSLATION = ("a", "b", "v", "g", "d", "e", "e", "j", "z", "i", "j", "k", "l", "m", "n", "o", "p", "r", "s", "t", "u",
                "f", "h", "ts", "ch", "sh", "sch", "", "y", "", "e", "yu", "ya", "je", "i", "ji", "g")
@@ -18,34 +14,73 @@ for c, l in zip(CYRILLIC_SYMBOLS, TRANSLATION):
     TRANS[ord(c.upper())] = l.upper()
 
 
-def file_sorting(file: Path):
-    folder_name = FILE_EXT_LINKS.get(file.suffix.upper())
-    if folder_name:
-        FILE_TYPES[folder_name]["file_list"].append(file)
-        known_file_types.add(file.suffix)
+known_file_extensions = set()
+unknown_file_extensions = set()
+
+max_file_name_len = 0
+
+MAX_PRINT_STR_LEN = 60
+
+
+def file_extension_print(extensions: set, header: str):
+    if len(extensions):
+        print(header + ":")
+        out_str = ", ".join(extensions)
+        while len(out_str) > MAX_PRINT_STR_LEN:
+            pos = out_str[:MAX_PRINT_STR_LEN].rfind(",")
+            if pos == -1:
+                break
+            else:
+                print(out_str[:pos+1].lstrip())
+                out_str = out_str[pos+1:].lstrip()
+        print(out_str)
     else:
-        unknown_files.append(file)
-        unknown_file_types.add(file.suffix)
+        print(f"{header} not found.\n")
 
 
 def file_action(file: Path):
-    folder_name = FILE_EXT_LINKS.get(file.suffix.upper())
-    if folder_name:
-        FILE_TYPES[folder_name]["action"](file, folder_name)  # processing function call
-    else:  # unknown extension
-        file.replace(Path(file.parent, normalize(file.stem) + file.suffix))
+    global max_file_name_len  # I know I shouldn't do it.
+    if len(file.name) > max_file_name_len: max_file_name_len = len(file.name)
+
+    folder_name = FILE_EXT_LINKS.get(file.suffix.upper(), "unknown_files")
+    FILE_TYPES[folder_name]["action"](file, folder_name)  # processing function call
 
 
-def file_move(file: Path, destination_folder: str):
+def error_message_print(file: Path, error):
+    print(f"An error occurred while processing the {file.name} file:\n{error}")
+
+
+def known_files_sorting(file: Path, destination_folder: str):
+    #new_file_name = normalize(file.stem) + file.suffix
     # with overwriting a file
-    file.replace(Path(base_path_dir, destination_folder, normalize(file.stem) + file.suffix))
+    try:
+        known_file_extensions.add(file.suffix.replace(".", ""))
+        file.replace(Path(base_path_dir, destination_folder, normalize(file.stem) + file.suffix))
+        FILE_TYPES[destination_folder]["file_list"].append(file.name)
+    except OSError as err:
+        error_message_print(file, err)
 
 
-def archive_unpack(archive_name: Path, destination_folder: str):
+def unknown_files_sorting(file: Path, destination_folder: str):
+    # with overwriting a file
+    try:
+        unknown_file_extensions.add(file.suffix.replace(".", ""))
+        file.replace(Path(base_path_dir, destination_folder, file.name))
+        FILE_TYPES[destination_folder]["file_list"].append(file.name)
+    except OSError as err:
+        error_message_print(file, err)
+
+
+def archive_unpack(file: Path, destination_folder: str):
     # with deleting a archive file
-    shutil.unpack_archive(str(archive_name),
-                          str(Path(base_path_dir, destination_folder, normalize(archive_name.stem))))
-    archive_name.unlink()
+    try:
+        known_file_extensions.add(file.suffix.replace(".", ""))
+        shutil.unpack_archive(str(file),
+                              str(Path(base_path_dir, destination_folder, normalize(file.stem))))
+        file.unlink()
+        FILE_TYPES[destination_folder]["file_list"].append(file.name)
+    except OSError as err:
+        error_message_print(file, err)
 
 
 def is_wrong_folder_name(folder_name: str) -> bool:
@@ -53,23 +88,25 @@ def is_wrong_folder_name(folder_name: str) -> bool:
 
 
 def is_folder_empty(path_dir: Path) -> bool:
-    return not bool(len([x for x in path_dir.iterdir()]))
+    return not (any(path_dir.iterdir()))
 
 
 def normalize(file_name: str) -> str:
     return "_".join(re.findall(r"\w+", file_name.translate(TRANS)))
 
-unknown_files = []
-unknown_file_types = set()
-known_file_types = set()
 
-FILE_TYPES = {"images": {"file_ext": (".JPEG", ".PNG", ".JPG", ".SVG"), "file_list": [], "action": file_move},
-              "video": {"file_ext": (".AVI", ".MP4", ".MOV", ".MKV"), "file_list": [], "action": file_move},
-              "documents": {"file_ext": (".DOC", ".DOCX", ".TXT", ".PDF", ".XLSX", ".PPTX"), "file_list": [], "action": file_move},
-              "audio": {"file_ext": (".MP3", ".OGG", ".WAV", ".AMR"), "file_list": [], "action": file_move},
-              "archives": {"file_ext": (".ZIP", ".GZ", ".TAR"), "file_list": [], "action": archive_unpack}
-              "unknown": {"file_ext": ("-"), "file_list": [], "action": archive_unpack}
-             }
+FILE_TYPES = {"images": {"file_ext": (".JPEG", ".PNG", ".JPG", ".SVG"),
+                         "file_list": [], "action": known_files_sorting},
+              "video": {"file_ext": (".AVI", ".MP4", ".MOV", ".MKV"),
+                        "file_list": [], "action": known_files_sorting},
+              "documents": {"file_ext": (".DOC", ".DOCX", ".TXT", ".PDF", ".XLSX", ".PPTX"),
+                            "file_list": [], "action": known_files_sorting},
+              "audio": {"file_ext": (".MP3", ".OGG", ".WAV", ".AMR"),
+                        "file_list": [], "action": known_files_sorting},
+              "archives": {"file_ext": (".ZIP", ".GZ", ".TAR"),
+                           "file_list": [], "action": archive_unpack},
+              "unknown_files": {"file_ext": (),
+                                "file_list": [], "action": unknown_files_sorting}}
 
 # An alternative for: for key, value in FILE_TYPES.items(): if file_ext in...
 FILE_EXT_LINKS = \
@@ -82,7 +119,13 @@ def parsing_folder(path_dir: Path):
             if item.name not in FILE_TYPES.keys():
                 parsing_folder(item)
         else:
-            file_sorting(item)
+            file_action(item)
+
+    if is_folder_empty(path_dir):
+        path_dir.rmdir()
+    else:
+        if is_wrong_folder_name(path_dir.name):
+            path_dir.rename(Path(path_dir.parent, normalize(path_dir.name)))
 
 
 if __name__ == '__main__':
@@ -94,23 +137,35 @@ if __name__ == '__main__':
         if not (base_path_dir.exists() and base_path_dir.is_dir()):
             sys.exit("Folder not found.")
 
-    # try:
-    print("\nStarting to group files in a folder...\n")
+    print("\nStarting to sort files in a folder...")
 
     # Creating folders to store sorted files
-    for folder in FILE_TYPES.keys():
-        Path(base_path_dir, folder).mkdir(exist_ok=True)
+    try:
+        for folder in FILE_TYPES.keys():
+            Path(base_path_dir, folder).mkdir(exist_ok=True)
+    except OSError as err:
+        sys.exit(f"An error occurred when creating folders:\n{err}")
 
     parsing_folder(base_path_dir)
 
-    print(unknown_files)
-    print(unknown_file_types)
-    print(known_file_types)
+    # Output to console
+    if max_file_name_len:
+        max_file_name_len = max(max_file_name_len, MAX_PRINT_STR_LEN)
+        print("\nThe file sorting was successful.")
+        print("\nThe following files were sorted:")
 
-    for item, value in FILE_TYPES.items():
-        print(item)
-        print(value["file_list"])
+        for key, value in sorted(FILE_TYPES.items()):
+            if len(value["file_list"]):
+                print("+" + "-" * max_file_name_len + "+")
+                print("|{:^{}}|".format(key, max_file_name_len))
+                print("+" + "-" * max_file_name_len + "+")
 
-    print("The file grouping was successful.")
-    # except:  # I know it's not recommended
-    #     sys.exit("An error occurred when grouping files ((")
+                for i in sorted(value["file_list"]):
+                    print("|{:<{}}|".format(i, max_file_name_len))
+
+        print("+" + "-" * max_file_name_len + "+\n")
+
+        file_extension_print(known_file_extensions, "Known file extensions")
+        file_extension_print(unknown_file_extensions, "Unknown file extensions")
+    else:
+        print("No unsorted files found)).")
